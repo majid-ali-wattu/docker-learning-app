@@ -1,0 +1,22 @@
+docker network create mongo-net 
+
+docker pull mongo
+
+docker run -d --name mongodb --network mongo-net -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=password   -e GLIBC_TUNABLES="glibc.pthread.rseq=1"  -p 27017:27017 mongo
+
+
+docker pull mongo-express
+
+docker run -d mongoexpress --network mongo-net -e ME_CONFIG_MONGODB_ADMINUSERNAME=admin \
+  -e ME_CONFIG_MONGODB_ADMINPASSWORD=password \
+  -e ME_CONFIG_MONGODB_SERVER=mongodb \
+-p 8080:8081
+mongo-express
+
+
+
+docker build -t node-app:latest .
+
+docker tag docker-learning-node-app majidaliwatto/node-app:latest
+
+push majidaliwatto/node-app:latest

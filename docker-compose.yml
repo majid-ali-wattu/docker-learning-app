@@ -1,0 +1,58 @@
+# version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      GLIBC_TUNABLES: "glibc.pthread.rseq=1"
+    ports:
+      - "27017:27017" 
+    volumes:
+      - mongo-data:/data/db
+
+    networks:
+      - mongo-net
+  
+  mongo-express:
+    image: mongo-express
+    container_name: monogexpress
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+      ME_CONFIG_MONGODB_SERVER: mongodb
+
+    ports:
+      - "8080:8081" 
+    networks:
+      - mongo-net
+    depends_on:
+      - mongodb
+  node-app:
+    build: ./node-app
+    container_name: node-app
+    environment:
+      MONGO_URL: mongodb://admin:password@mongodb:27017
+    ports:
+      - "3001:3000"
+    networks:
+      - mongo-net
+    depends_on:
+      - mongodb
+    restart: on-failure
+  react-app:
+    build: ./react-app
+    container_name: react-app
+    ports:
+      - "3000:80"
+    networks:
+      - mongo-net
+    depends_on:
+      - node-app
+volumes:
+  mongo-data:
+networks:
+  mongo-net:
+    driver: bridge

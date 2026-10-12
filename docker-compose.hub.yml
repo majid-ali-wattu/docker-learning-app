@@ -1,0 +1,61 @@
+# Runs the whole stack from images on Docker Hub. Nothing is built locally.
+#   docker compose -f docker-compose.hub.yml up -d
+name: docker-learning-hub
+
+services:
+  mongodb:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      GLIBC_TUNABLES: "glibc.pthread.rseq=1"
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - mongo-net
+
+  mongo-express:
+    image: mongo-express:latest
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+      ME_CONFIG_MONGODB_SERVER: mongodb
+    ports:
+      - "8080:8081"
+    networks:
+      - mongo-net
+    depends_on:
+      - mongodb
+
+  # The service name must stay "node-app": the react-app image's nginx proxies to it.
+  node-app:
+    image: majidaliwatto/node-app:latest
+    pull_policy: always
+    environment:
+      MONGO_URL: mongodb://admin:password@mongodb:27017
+    ports:
+      - "3001:3000"
+    networks:
+      - mongo-net
+    depends_on:
+      - mongodb
+    restart: on-failure
+
+  react-app:
+    image: majidaliwatto/react-app:latest
+    pull_policy: always
+    ports:
+      - "3000:80"
+    networks:
+      - mongo-net
+    depends_on:
+      - node-app
+
+volumes:
+  mongo-data:
+
+networks:
+  mongo-net:
+    driver: bridge
